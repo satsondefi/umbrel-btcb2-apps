@@ -1,0 +1,125 @@
+manifestVersion: 1.1
+id: datum-gateway-btcb2
+category: bitcoin
+name: DATUM Gateway Btcb2
+version: "1.0.0"
+tagline: Mine to BTCB2 with your own Umbrel DATUM Gateway
+description: >-
+  ⚙️ Please read the important setup instructions at the bottom of this page.
+
+
+  DATUM Gateway Btcb2 runs a BLAKE2b DATUM Gateway on your Umbrel, pre-configured
+  for the BTCB2 pool at https://www.btcb2.com. Your node builds the block
+  templates; your miners connect to this gateway on your LAN; the gateway talks
+  to datum.btcb2.com over DATUM.
+
+
+  You can install this next to the official DATUM app or other community
+  gateways. This app uses stratum port 23340 and does not take over 23334.
+
+
+  🛠️ SET-UP INSTRUCTIONS
+
+
+  ### Bitcoin node
+
+
+  During install, select a Bitcoin Knots node on the BLAKE2b chain (official
+  Bitcoin Knots switched to BLAKE2b, or a community Knots BLAKE2b companion).
+  A full archival node is not required for mining; pruning is fine.
+
+
+  ### Logging in (Config, Clients, Threads, Coinbaser)
+
+
+  Open the app from the umbrelOS home screen. Status is visible without a
+  password. To change settings or view Clients / Threads / Coinbaser:
+
+
+    1. Right-click the DATUM Gateway Btcb2 icon
+    2. Choose "Show default credentials"
+    3. Username is `admin`
+    4. Use the shown password when the gateway asks for admin access
+
+
+  That password is wired into the gateway automatically on first start (same
+  flow as the official Umbrel DATUM app). Safari sometimes cannot save Config
+  changes; use Chrome or Firefox if saves fail.
+
+
+  ### First-time Config
+
+
+  Open the Config tab and set your Bitcoin payout address (the address BTCB2
+  will credit). Pool host, port and pubkey are already filled for
+  datum.btcb2.com. Keep "pooled mining only" / collaborative reward sharing
+  required unless you intentionally want solo fallback.
+
+
+  Confirm against https://www.btcb2.com/connect if the pool ever rotates its
+  pubkey (128 hex characters).
+
+
+  ### Connecting your miner
+
+
+  Point the ASIC at your Umbrel's LAN IP and port 23340 (not the pool host):
+
+
+    - Stratum URL: `stratum+tcp://192.168.x.x:23340`
+    - Username: `youraddress` or `youraddress.workername`
+    - Password: `x` (or any value your firmware requires)
+
+
+  Use the numeric IP from umbrelOS Settings. Most ASIC firmware cannot resolve
+  `.local` names.
+
+
+  ### Verify
+
+
+  Status should show Connected and Ready to datum.btcb2.com:28915. Local and
+  pool shares should climb. Your address should appear on
+  https://www.btcb2.com after the first accepted shares.
+
+
+  More operator notes: https://www.btcb2.com
+developer: BTCB2
+website: https://www.btcb2.com
+dependencies:
+  - bitcoin
+repo: https://github.com/yudikorsou/datum-gateway-verify-bot
+support: https://www.btcb2.com
+port: 21010
+gallery:
+  - 1.png
+  - 2.png
+  - 3.png
+path: ""
+defaultUsername: "admin"
+deterministicPassword: true
+releaseNotes: >-
+  Initial community-store release: DATUM Gateway preconfigured for BTCB2
+  (datum.btcb2.com:28915), Umbrel proxy login credentials for Config / Clients /
+  Threads / Coinbaser, stratum on port 23340, and automatic Knots/Bitcoin RPC wiring.
+submitter: BTCB2
+submission: ""
+widgets:
+  - id: "stats"
+    type: "three-stats"
+    refresh: "30s"
+    endpoint: "gateway:21010/umbrel-api"
+    link: ""
+    example:
+      type: "three-stats"
+      link: ""
+      items:
+        - title: "Connections"
+          text: "1"
+          subtext: "Worker"
+        - title: "Hashrate"
+          text: "17"
+          subtext: "TH/s"
+        - title: "Pool"
+          text: "BTCB2"
+          subtext: "Ready"

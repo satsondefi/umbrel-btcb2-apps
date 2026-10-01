@@ -1,0 +1,30 @@
+version: "3.7"
+
+services:
+  app_proxy:
+    environment:
+      # Umbrel proxy in front of the DATUM Gateway dashboard (Status / Config / Clients / Threads / Coinbaser).
+      APP_HOST: $APP_DATUM_GATEWAY_BTCB2_IP
+      APP_PORT: 21010
+
+  gateway:
+    # BLAKE2b DATUM Gateway image (same family as working Umbrel BTCB2 installs).
+    image: ghcr.io/horizon-btc/datum:v1.14-blake2b-5@sha256:da91a18a852f9e5018a3e18f54b3318b42ef22d9fa9a43b4c4b525f82065fb7d
+    # Run the binary directly so the Config tab can persist changes (same pattern as official DATUM / paulscode).
+    entrypoint: ["/app/datum_gateway"]
+    command: ["--config=/app/conf/datum_gateway_config.json"]
+    user: "1000:1000"
+    restart: on-failure
+    stop_grace_period: 30s
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    volumes:
+      - ${APP_DATA_DIR}/data/settings/:/app/conf/
+    ports:
+      # Stratum for miners on your LAN (not the official DATUM app's 23334).
+      - "23340:23340"
+    networks:
+      default:
+        ipv4_address: $APP_DATUM_GATEWAY_BTCB2_IP

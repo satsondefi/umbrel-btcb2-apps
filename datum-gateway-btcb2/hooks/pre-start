@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+# Patch datum_gateway_config.json with host-only values: Knots/Bitcoin RPC and
+# this app's Umbrel password for the dashboard admin pages (Config / Clients /
+# Threads / Coinbaser). Same pattern as the official Umbrel DATUM app.
+set -euo pipefail
+
+APP_DATA_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/..")"
+DATUM_CONFIG_FILE="${APP_DATA_DIR}/data/settings/datum_gateway_config.json"
+DESIRED_OWNER="1000:1000"
+
+BTCB2_POOL_HOST="datum.btcb2.com"
+BTCB2_POOL_PORT="28915"
+BTCB2_POOL_PUBKEY="493bbe6ab5ed4cb01928040ac1e343842108fb475a81c4313209b513a5c210a8ae0c38c1269ef5eaef5b829d10aaf00ff84d67af79aeb957b87f8c1bfe5fb948"
+
+# umbreld does not always re-copy data/ on update. Create defaults if missing so
+# Docker never bind-mounts an empty root-owned directory over /app/conf.
+if [[ ! -f "${DATUM_CONFIG_FILE}" ]]; then
+  echo "DATUM configuration file missing; writing BTCB2 defaults."
+  mkdir -p "$(dirname "${DATUM_CONFIG_FILE}")"
+  cat > "${DATUM_CONFIG_FILE}" <<'DATUMCONF'
+{
+  "bitcoind": {
+    "rpcuser": "auto-configure-on-install",
+    "rpcpassword": "auto-configure-on-install",
+    "rpcurl": "auto-configure-on-install",
+    "notify_fallback": true
+  },
+  "api": {
+    "listen_addr": "0.0.0.0",
+    "listen_port": 21010,
+    "modify_conf": true,
+    "admin_password": "umbrel"
+  },
+  "mining": {
+    "pool_address": "",
+    "coinbase_tag_primary": "DATUM",
+    "coinbase_tag_secondary": "btcb2"
+  },
+  "stratum": {
+    "listen_addr": "0.0.0.0",
+    "listen_port": 23340,
+    "require_address_username": true
+  },
+  "logger": {
+    "log_to_console": true,
+    "log_to_file": false,
+    "log_level_console": 2
+  },
+  "datum": {
+    "pool_host": "datum.btcb2.com",
+    "pool_port": 28915,
+    "pool_pubkey": "493bbe6ab5ed4cb01928040ac1e343842108fb475a81c4313209b513a5c210a8ae0c38c1269ef5eaef5b829d10aaf00ff84d67af79aeb957b87f8c1bfe5fb948",
+    "pool_pass_workers": true,
+    "pool_pass_full_users": true,
+    "pooled_mining_only": true,
+    "protocol_v3": true
+  }
+}
+DATUMCONF
+fi
+
+bitcoin_rpc_user="${APP_BITCOIN_RPC_USER:-${APP_BITCOIN_KNOTS_RPC_USER:-}}"
+bitcoin_rpc_pass="${APP_BITCOIN_RPC_PASS:-${APP_BITCOIN_KNOTS_RPC_PASS:-}}"
+bitcoin_node_ip="${APP_BITCOIN_NODE_IP:-${APP_BITCOIN_KNOTS_NODE_IP:-}}"
+bitcoin_rpc_port="${APP_BITCOIN_RPC_PORT:-${APP_BITCOIN_KNOTS_INTERNAL_RPC_PORT:-${APP_BITCOIN_KNOTS_RPC_PORT:-}}}"
+
+if [[ -z "${bitcoin_rpc_user}" ]] || [[ -z "${bitcoin_rpc_pass}" ]] || [[ -z "${bitcoin_node_ip}" ]] || [[ -z "${bitcoin_rpc_port}" ]]; then
+  echo "Missing Bitcoin / Knots RPC environment variables. Install and select a compatible Bitcoin Knots node, then restart this app."
+  exit 1
+fi
+
+echo "Pointing DATUM Gateway Btcb2 at the selected Bitcoin node RPC."
+
+jq --arg user "${bitcoin_rpc_user}" \
+   --arg pass "${bitcoin_rpc_pass}" \
+   --arg url "${bitcoin_node_ip}:${bitcoin_rpc_port}" \
+   '.bitcoind.rpcuser = $user |
+    .bitcoind.rpcpassword = $pass |
+    .bitcoind.rpcurl = $url |
+    .bitcoind.notify_fallback = true' \
+   "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+
+# Dashboard admin password = Umbrel "Show default credentials" password.
+# Username is hardcoded as admin by DATUM. Only replace the seeded placeholder
+# so a password changed later in Config is preserved.
+if jq -e '.api.admin_password == "umbrel"' "${DATUM_CONFIG_FILE}" > /dev/null; then
+  jq --arg password "${APP_PASSWORD}" '.api.admin_password = $password' \
+     "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+elif ! jq -e '.api.admin_password' "${DATUM_CONFIG_FILE}" > /dev/null; then
+  jq --arg password "${APP_PASSWORD}" '.api.admin_password = $password' \
+     "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+else
+  echo "Admin password already set."
+fi
+
+# Required so Config saves persist and Clients / Threads / Coinbaser are usable after login.
+jq '.api.modify_conf = true |
+    .api.listen_port = 21010 |
+    .api.listen_addr = (.api.listen_addr // "0.0.0.0") |
+    .stratum.listen_port = 23340 |
+    .stratum.listen_addr = (.stratum.listen_addr // "0.0.0.0")' \
+   "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+
+# Keep BTCB2 pool defaults unless the operator intentionally cleared pool_host.
+CURRENT_HOST="$(jq -r '.datum.pool_host // ""' "${DATUM_CONFIG_FILE}")"
+CURRENT_PUBKEY="$(jq -r '.datum.pool_pubkey // ""' "${DATUM_CONFIG_FILE}")"
+if [[ -z "${CURRENT_HOST}" ]]; then
+  echo "Seeding BTCB2 pool host ${BTCB2_POOL_HOST}."
+  jq --arg host "${BTCB2_POOL_HOST}" --argjson port "${BTCB2_POOL_PORT}" \
+     '.datum.pool_host = $host | .datum.pool_port = $port | .datum.pooled_mining_only = true' \
+     "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+fi
+if [[ -z "${CURRENT_PUBKEY}" ]]; then
+  echo "Seeding BTCB2 pool pubkey."
+  jq --arg key "${BTCB2_POOL_PUBKEY}" '.datum.pool_pubkey = $key' \
+     "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+fi
+
+# Defuse an invalid pubkey before the gateway fatal-exits (dashboard would never load).
+POOL_HOST="$(jq -r '.datum.pool_host // ""' "${DATUM_CONFIG_FILE}")"
+POOL_PUBKEY="$(jq -r '.datum.pool_pubkey // ""' "${DATUM_CONFIG_FILE}")"
+if [[ -n "${POOL_HOST}" ]] && ! printf '%s' "${POOL_PUBKEY}" | grep -Eq '^[0-9a-fA-F]{128}$'; then
+  echo "Pool public key is not 128 hex characters; disabling pooled mining for this start so the dashboard can load."
+  jq '.datum["pool_host(old)"] = .datum.pool_host |
+      .datum.pool_host = "" |
+      .datum.pooled_mining_only = false' \
+     "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+fi
+
+if jq -e '.mining.pool_address | select(. == "enter your bitcoin address")' "${DATUM_CONFIG_FILE}" > /dev/null; then
+  jq '.mining.pool_address = ""' \
+     "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+fi
+
+# Advertise this device's LAN IP for miners (ASICs often cannot resolve .local).
+HOST_IP="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}' || true)"
+if [[ -n "${HOST_IP}" ]]; then
+  echo "Advertising stratum host ${HOST_IP} for miners."
+  jq --arg host "${HOST_IP}" '.stratum.advertised_host = $host' \
+     "${DATUM_CONFIG_FILE}" > "${DATUM_CONFIG_FILE}.tmp" && mv "${DATUM_CONFIG_FILE}.tmp" "${DATUM_CONFIG_FILE}"
+fi
+
+# Directory ownership matters: modify_conf writes a temp file then renames.
+chown "${DESIRED_OWNER}" "$(dirname "${DATUM_CONFIG_FILE}")"
+chown "${DESIRED_OWNER}" "${DATUM_CONFIG_FILE}"
+
+echo "DATUM Gateway Btcb2 configuration updated successfully."

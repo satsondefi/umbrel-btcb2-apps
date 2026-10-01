@@ -1,0 +1,38 @@
+{
+  "bitcoind": {
+    "rpcuser": "auto-configure-on-install",
+    "rpcpassword": "auto-configure-on-install",
+    "rpcurl": "auto-configure-on-install",
+    "notify_fallback": true
+  },
+  "api": {
+    "listen_addr": "0.0.0.0",
+    "listen_port": 21010,
+    "modify_conf": true,
+    "admin_password": "umbrel"
+  },
+  "mining": {
+    "pool_address": "",
+    "coinbase_tag_primary": "DATUM",
+    "coinbase_tag_secondary": "btcb2"
+  },
+  "stratum": {
+    "listen_addr": "0.0.0.0",
+    "listen_port": 23340,
+    "require_address_username": true
+  },
+  "logger": {
+    "log_to_console": true,
+    "log_to_file": false,
+    "log_level_console": 2
+  },
+  "datum": {
+    "pool_host": "datum.btcb2.com",
+    "pool_port": 28915,
+    "pool_pubkey": "493bbe6ab5ed4cb01928040ac1e343842108fb475a81c4313209b513a5c210a8ae0c38c1269ef5eaef5b829d10aaf00ff84d67af79aeb957b87f8c1bfe5fb948",
+    "pool_pass_workers": true,
+    "pool_pass_full_users": true,
+    "pooled_mining_only": true,
+    "protocol_v3": true
+  }
+}
