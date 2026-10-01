@@ -9,7 +9,7 @@ Verified against a live Umbrel install talking to `datum.btcb2.com:28915` (Conne
 | Item | Value |
 | --- | --- |
 | App name | **DATUM Gateway Btcb2** |
-| App id | `datum-gateway-btcb2` |
+| App id | `btcb2-datum-gateway-btcb2` |
 | Dashboard | Status, Config, Clients, Threads, Coinbaser |
 | Admin login | Same as official DATUM: right-click app → **Show default credentials** → user `admin` |
 | Stratum (miners) | `stratum+tcp://<umbrel-lan-ip>:23340` |
@@ -23,7 +23,7 @@ Verified against a live Umbrel install talking to `datum.btcb2.com:28915` (Conne
 1. Umbrel → **App Store** → ⋮ → **Community App Stores** → **Add**
 2. Paste the Git URL of the repo that contains `deploy/umbrel-app-store/` **as the store root**, **or** publish only that folder as its own repo.
 
-   If this monorepo is used as-is, the store root must be the directory that contains `umbrel-app-store.yml` and `datum-gateway-btcb2/`:
+   If this monorepo is used as-is, the store root must be the directory that contains `umbrel-app-store.yml` and `btcb2-datum-gateway-btcb2/`:
 
    ```text
    …/deploy/umbrel-app-store
@@ -60,7 +60,7 @@ Do **not** point the ASIC at `datum.btcb2.com` directly — the gateway must sit
 ```text
 deploy/umbrel-app-store/
   umbrel-app-store.yml
-  datum-gateway-btcb2/
+  btcb2-datum-gateway-btcb2/
     umbrel-app.yml
     docker-compose.yml
     exports.sh
