@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: btcb2-datum-gateway-btcb2
 category: bitcoin
 name: DATUM Gateway Btcb2
-version: "1.0.3"
+version: "1.0.4"
 tagline: Mine to BTCB2 with your own Umbrel DATUM Gateway
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -101,8 +101,9 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
-  The gateway dashboard now shows the BTCB2 logo and favicon instead of the
-  DATUM logo. Mining, ports and settings are unchanged.
+  Fixes 1.0.3 not starting after update. The gateway dashboard shows the
+  BTCB2 logo and favicon instead of the DATUM logo. Mining, ports and
+  settings are unchanged.
 submitter: BTCB2
 submission: ""
 widgets:
