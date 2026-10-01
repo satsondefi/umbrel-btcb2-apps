@@ -91,10 +91,12 @@ dependencies:
 repo: https://github.com/yudikorsou/datum-gateway-verify-bot
 support: https://www.btcb2.com
 port: 21010
+# Community stores need absolute icon/gallery URLs (Umbrel does not rewrite relative paths).
+icon: https://raw.githubusercontent.com/yudikorsou/umbrel-btcb2-apps/main/datum-gateway-btcb2/icon.png
 gallery:
-  - 1.png
-  - 2.png
-  - 3.png
+  - https://raw.githubusercontent.com/yudikorsou/umbrel-btcb2-apps/main/datum-gateway-btcb2/gallery/1.png
+  - https://raw.githubusercontent.com/yudikorsou/umbrel-btcb2-apps/main/datum-gateway-btcb2/gallery/2.png
+  - https://raw.githubusercontent.com/yudikorsou/umbrel-btcb2-apps/main/datum-gateway-btcb2/gallery/3.png
 path: ""
 defaultUsername: "admin"
 deterministicPassword: true
