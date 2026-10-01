@@ -4,8 +4,20 @@ services:
   app_proxy:
     environment:
       # Umbrel proxy in front of the DATUM Gateway dashboard (Status / Config / Clients / Threads / Coinbaser).
-      APP_HOST: $APP_DATUM_GATEWAY_BTCB2_IP
+      # Goes through the branding proxy (web), which shows the BTCB2 logo.
+      APP_HOST: btcb2-datum-gateway-btcb2_web_1
       APP_PORT: 21010
+
+  web:
+    # Swaps the dashboard's DATUM header for the BTCB2 logo; see branding/nginx.conf.
+    image: nginx:1.27-alpine
+    restart: on-failure
+    depends_on:
+      - gateway
+    volumes:
+      - ${APP_DATA_DIR}/branding/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${APP_DATA_DIR}/branding/btcb2_logo.png:/etc/nginx/btcb2/btcb2_logo.png:ro
+      - ${APP_DATA_DIR}/branding/favicon.ico:/etc/nginx/btcb2/favicon.ico:ro
 
   gateway:
     # BLAKE2b DATUM Gateway image (same family as working Umbrel BTCB2 installs).
