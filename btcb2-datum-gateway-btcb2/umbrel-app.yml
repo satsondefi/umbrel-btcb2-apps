@@ -2,7 +2,7 @@ manifestVersion: 1.1
 id: btcb2-datum-gateway-btcb2
 category: bitcoin
 name: DATUM Gateway Btcb2
-version: "1.0.0"
+version: "1.0.2"
 tagline: Mine to BTCB2 with your own Umbrel DATUM Gateway
 description: >-
   ⚙️ Please read the important setup instructions at the bottom of this page.
@@ -101,6 +101,7 @@ path: ""
 defaultUsername: "admin"
 deterministicPassword: true
 releaseNotes: >-
+  Update app icon to BTCB2 DATUM branding.
   Initial community-store release: DATUM Gateway preconfigured for BTCB2
   (datum.btcb2.com:28915), Umbrel proxy login credentials for Config / Clients /
   Threads / Coinbaser, stratum on port 23340, and automatic Knots/Bitcoin RPC wiring.
